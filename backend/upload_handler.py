@@ -1,27 +1,23 @@
 import pandas as pd
 import sqlite3
 import os
+import io
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "marketing.db")
 TABLE_NAME = "marketing_data"
 
-def upload_dataset(file) -> pd.DataFrame:
+def upload_dataset(file_bytes):
     """
-    Accept a CSV file and load it into a pandas DataFrame.
-    
-    Args:
-        file: A file path (str) or a file-like object.
-        
-    Returns:
-        pd.DataFrame: The loaded dataset.
+    Convert uploaded CSV bytes into pandas DataFrame.
     """
+
     try:
-        # Read the CSV file into a pandas DataFrame
-        df = pd.read_csv(file)
-        return df
-    except Exception as e:
-        raise ValueError(f"Failed to read CSV file: {e}")
+        df = pd.read_csv(io.BytesIO(file_bytes))
+    except UnicodeDecodeError:
+        df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1")
+
+    return df
 
 def detect_schema(dataframe: pd.DataFrame) -> list:
     """

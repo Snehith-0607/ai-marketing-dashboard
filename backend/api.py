@@ -1,21 +1,26 @@
+import pandas as pd
 import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from query_engine import generate_query
-from data_engine import run_query
-from insight_engine import generate_insight
-from chart_engine import select_chart
-from context_manager import store_query, get_context
-from response_formatter import format_response
-from dataset_handler import upload_dataset, detect_schema, store_dataset
+from backend.data_engine import initialize_database
+from backend.query_engine import generate_query
+from backend.data_engine import run_query
+from backend.insight_engine import generate_insight
+from backend.chart_engine import select_chart
+from backend.context_manager import store_query, get_context
+from backend.response_formatter import format_response
+from backend.upload_handler import upload_dataset, detect_schema, store_dataset
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Marketing Analytics API")
+@app.on_event("startup")
+def startup_event():
+    initialize_database()
 
 # Enable CORS for frontend requests
 app.add_middleware(
@@ -46,7 +51,15 @@ async def upload_file(file: UploadFile = File(...)):
         
     try:
         # Pass the SpooledTemporaryFile to pandas
-        df = upload_dataset(file.file)
+        try:
+            # First try UTF-8
+            contents = await file.read()
+            df = upload_dataset(contents)
+        except UnicodeDecodeError:
+            # Reset file pointer and retry with latin1
+            file.seek(0)
+            contents = await file.read()
+            df = upload_dataset(contents, encoding="latin1")
         
         # Detect schema
         schema_cols = detect_schema(df)

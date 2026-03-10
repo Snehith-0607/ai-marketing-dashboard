@@ -19,7 +19,7 @@ def generate_query(user_prompt: str, context: str = "") -> dict:
     }
 
     try:
-        api_key = os.environ.get("OPENROUTER_API_KEY")
+        api_key = os.getenv("OPENROUTER_API_KEY")
 
         if not api_key:
             print("Warning: OPENROUTER_API_KEY not set. Using fallback.")

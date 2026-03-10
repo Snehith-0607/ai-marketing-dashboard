@@ -1,12 +1,12 @@
 import pandas as pd
 import sqlite3
 import os
-from sql_validator import validate_sql
-from cache_layer import store_cache, get_cached_result
+from backend.sql_validator import validate_sql
+from backend.cache_manager import store_cache, get_cached_result
 
 # Define paths relative to the current file's directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_PATH = os.path.join(BASE_DIR, "data", "marketing_data.csv")
+CSV_PATH = os.path.join(BASE_DIR, "..", "data", "marketing_data.csv")
 DB_PATH = os.path.join(BASE_DIR, "marketing.db")
 TABLE_NAME = "marketing_data"
 
@@ -15,7 +15,7 @@ def load_data():
     Reads the marketing data CSV and stores it into an SQLite database.
     """
     # Read the CSV
-    df = pd.read_csv(CSV_PATH)
+    df = pd.read_csv(CSV_PATH, encoding="ISO-8859-1")
     
     # Connect to SQLite database (creates it if it doesn't exist)
     conn = sqlite3.connect(DB_PATH)
@@ -26,6 +26,15 @@ def load_data():
     # Close the connection
     conn.close()
 
+def initialize_database():
+    """
+    Initializes the SQLite database only if it doesn't exist.
+    """
+    if not os.path.exists(DB_PATH):
+        print("Initializing database from CSV...")
+        load_data()
+        print("Database initialized successfully.")
+        
 def run_query(sql_query):
     """
     Executes the provided SQL query against the SQLite database 
