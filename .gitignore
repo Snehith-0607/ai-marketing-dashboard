@@ -1,2 +1,30 @@
-# Exclude the ai-marketing-dashboard folder (backend stays local only)
+﻿# Exclude the ai-marketing-dashboard folder (backend stays local only)
 ai-marketing-dashboard/
+
+# Environments
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# DB
+*.db
+marketing.db
