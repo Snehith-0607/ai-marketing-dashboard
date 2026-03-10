@@ -2,6 +2,7 @@ import pandas as pd
 import sqlite3
 import os
 from sql_validator import validate_sql
+from cache_layer import store_cache, get_cached_result
 
 # Define paths relative to the current file's directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,10 +31,17 @@ def run_query(sql_query):
     Executes the provided SQL query against the SQLite database 
     and returns the result as a pandas DataFrame.
     """
-    conn = sqlite3.connect(DB_PATH)
     
     # Validate SQL query before execution
     safe_query = validate_sql(sql_query)
+    
+    # Check if the result is cached
+    cached_df = get_cached_result(safe_query)
+    if cached_df is not None:
+        print("Returning cached result for query.")
+        return cached_df
+        
+    conn = sqlite3.connect(DB_PATH)
     
     # Execute query and load into dataframe
     df = pd.read_sql_query(safe_query, conn)
@@ -41,7 +49,11 @@ def run_query(sql_query):
     # Close the connection
     conn.close()
     
+    # Store the result in cache
+    store_cache(safe_query, df)
+    
     return df
+
 
 def test_query():
     """
