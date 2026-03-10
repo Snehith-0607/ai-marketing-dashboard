@@ -1,5 +1,5 @@
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -9,6 +9,7 @@ from insight_engine import generate_insight
 from chart_engine import select_chart
 from context_manager import store_query, get_context
 from response_formatter import format_response
+from dataset_handler import upload_dataset, detect_schema, store_dataset
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,34 @@ class QueryResponse(BaseModel):
     title: str
     data: list
     insight: str
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """
+    Endpoint to upload a CSV dataset, detect its schema, and store it for analytics.
+    """
+    logger.info(f"Received file upload: {file.filename}")
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+        
+    try:
+        # Pass the SpooledTemporaryFile to pandas
+        df = upload_dataset(file.file)
+        
+        # Detect schema
+        schema_cols = detect_schema(df)
+        
+        # Store to SQLite
+        store_dataset(df)
+        
+        return {
+            "message": "Dataset uploaded successfully",
+            "columns": schema_cols,
+            "rows": len(df)
+        }
+    except Exception as e:
+        logger.error(f"Dataset upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 @app.post("/query", response_model=QueryResponse)
 def process_query(request: QueryRequest):

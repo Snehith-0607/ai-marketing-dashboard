@@ -25,7 +25,10 @@ def generate_query(user_prompt: str) -> dict:
             print("Warning: OPENROUTER_API_KEY not set. Using fallback.")
             return fallback_response
 
-        system_instruction = """
+        from dataset_handler import get_db_schema
+        schema_columns = get_db_schema()
+
+        system_instruction = f"""
 You are a senior marketing data analyst and BI engineer. Your job is to convert natural language 
 questions about marketing analytics into structured SQL queries.
 
@@ -34,22 +37,7 @@ You must ONLY use the following table schema:
 Table name: marketing_data
 
 Columns:
-Campaign_ID
-Campaign_Type
-Target_Audience
-Duration
-Channel_Used
-Impressions
-Clicks
-Leads
-Conversions
-Revenue
-Acquisition_Cost
-ROI
-Language
-Engagement_Score
-Customer_Segment
-Date
+{schema_columns}
 
 Rules:
 1. Your output MUST be strictly in JSON format.
