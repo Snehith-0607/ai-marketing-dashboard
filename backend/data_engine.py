@@ -1,79 +1,64 @@
-"""
-data_engine.py
-Backend data layer — loads CSV into SQLite and exposes query functions.
-Snehith's module.
-"""
 import pandas as pd
 import sqlite3
 import os
 
-DB_PATH = "marketing.db"
-CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "marketing_data.csv")
-
+# Define paths relative to the current file's directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.join(BASE_DIR, "data", "marketing_data.csv")
+DB_PATH = os.path.join(BASE_DIR, "marketing.db")
+TABLE_NAME = "marketing_data"
 
 def load_data():
-    """Load CSV into SQLite database."""
-    conn = sqlite3.connect(DB_PATH)
-    df = pd.read_csv(CSV_PATH)
-    df.to_sql("marketing_data", conn, if_exists="replace", index=False)
-    print(f"✅ Loaded {len(df):,} rows into {DB_PATH}")
-    conn.close()
-    return len(df)
-
-
-def run_query(sql_query: str) -> pd.DataFrame:
-    """Execute SQL query and return result as DataFrame."""
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        df = pd.read_sql_query(sql_query, conn)
-        return df
-    except Exception as e:
-        print(f"Query error: {e}")
-        return pd.DataFrame({"Error": [str(e)]})
-    finally:
-        conn.close()
-
-
-def test_query():
-    """Run test query to verify database is working."""
-    sql = """
-        SELECT Campaign_Type, 
-               ROUND(SUM(Revenue), 2) as Total_Revenue,
-               ROUND(AVG(ROI), 3) as Avg_ROI,
-               COUNT(*) as Campaigns
-        FROM marketing_data
-        GROUP BY Campaign_Type
-        ORDER BY Total_Revenue DESC
-        LIMIT 5
     """
-    df = run_query(sql)
-    print("\n📊 Test Query Result:")
-    print(df.to_string())
+    Reads the marketing data CSV and stores it into an SQLite database.
+    """
+    # Read the CSV
+    df = pd.read_csv(CSV_PATH)
+    
+    # Connect to SQLite database (creates it if it doesn't exist)
+    conn = sqlite3.connect(DB_PATH)
+    
+    # Convert and store the dataframe as an SQLite table
+    df.to_sql(TABLE_NAME, conn, if_exists="replace", index=False)
+    
+    # Close the connection
+    conn.close()
+
+def run_query(sql_query):
+    """
+    Executes the provided SQL query against the SQLite database 
+    and returns the result as a pandas DataFrame.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    
+    # Execute query and load into dataframe
+    df = pd.read_sql_query(sql_query, conn)
+    
+    # Close the connection
+    conn.close()
+    
     return df
 
-
-def get_summary_stats():
-    """Return high-level stats for the dashboard."""
-    stats = {}
-    queries = {
-        "total_revenue": "SELECT SUM(Revenue) FROM marketing_data",
-        "total_campaigns": "SELECT COUNT(*) FROM marketing_data",
-        "avg_roi": "SELECT ROUND(AVG(ROI),2) FROM marketing_data",
-        "total_conversions": "SELECT SUM(Conversions) FROM marketing_data",
-        "avg_ctr": "SELECT ROUND(AVG(CAST(Clicks AS FLOAT)/NULLIF(Impressions,0))*100, 2) FROM marketing_data",
-        "avg_acq_cost": "SELECT ROUND(AVG(Acquisition_Cost),2) FROM marketing_data",
-    }
-    for key, sql in queries.items():
-        result = run_query(sql)
-        stats[key] = result.iloc[0, 0] if not result.empty else 0
-    return stats
-
+def test_query():
+    """
+    Runs a test query to get the total revenue grouped by Campaign_Type
+    (limited to 5 records) and returns the results as a dataframe.
+    """
+    query = '''
+        SELECT Campaign_Type, SUM(Revenue)
+        FROM marketing_data
+        GROUP BY Campaign_Type
+        LIMIT 5
+    '''
+    return run_query(query)
 
 if __name__ == "__main__":
-    print("🔄 Loading CSV into SQLite...")
+    # Ensure data is loaded
+    print(f"Loading data from {CSV_PATH} into {DB_PATH}...")
     load_data()
-    print("\n📈 Running test query...")
-    test_query()
-    print("\n📊 Summary stats:")
-    for k, v in get_summary_stats().items():
-        print(f"  {k}: {v}")
+    print("Data successfully loaded!")
+    
+    # Run the test query and print the results
+    print("\nRunning test query:")
+    result_df = test_query()
+    print(result_df)
