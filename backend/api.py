@@ -8,6 +8,7 @@ from data_engine import run_query
 from insight_engine import generate_insight
 from chart_engine import select_chart
 from context_manager import store_query, get_context
+from response_formatter import format_response
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -100,12 +101,9 @@ def process_query(request: QueryRequest):
     # Only store query if the entire process succeeds
     store_query(question)
     
-    return QueryResponse(
-        chart=chart,
-        title=title,
-        data=data,
-        insight=insight
-    )
+    formatted_payload = format_response(df, chart, title, insight)
+    
+    return QueryResponse(**formatted_payload)
 
 if __name__ == "__main__":
     import uvicorn
