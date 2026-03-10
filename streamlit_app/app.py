@@ -205,7 +205,7 @@ st.markdown("""
 # ─────────────────────────────────────────────
 #  GEMINI SETUP
 # ─────────────────────────────────────────────
-GEMINI_KEY = "AIzaSyBSMz0CPfsaobj-eQqs8-yBXahOEl_R2cE"
+GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 genai.configure(api_key=GEMINI_KEY)
 gemini = genai.GenerativeModel("gemini-2.0-flash")
 
