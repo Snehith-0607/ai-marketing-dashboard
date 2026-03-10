@@ -1,6 +1,7 @@
 import pandas as pd
 import sqlite3
 import os
+from sql_validator import validate_sql
 
 # Define paths relative to the current file's directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,8 +32,11 @@ def run_query(sql_query):
     """
     conn = sqlite3.connect(DB_PATH)
     
+    # Validate SQL query before execution
+    safe_query = validate_sql(sql_query)
+    
     # Execute query and load into dataframe
-    df = pd.read_sql_query(sql_query, conn)
+    df = pd.read_sql_query(safe_query, conn)
     
     # Close the connection
     conn.close()
