@@ -1,0 +1,327 @@
+Build a modern AI-powered Business Intelligence web application called:
+
+"Conversational AI for Instant Business Intelligence Dashboards"
+
+The goal of this application is to allow non-technical users to generate interactive data dashboards using natural language prompts.
+
+The application should feel like a combination of ChatGPT + a Business Intelligence tool (like Tableau or PowerBI).
+
+Use modern UI design with a clean SaaS aesthetic.
+
+Tech stack requirements:
+Frontend: React or Next.js
+Styling: TailwindCSS
+Charts: Recharts or Chart.js
+The UI must be responsive and professional.
+
+---
+
+MAIN APPLICATION ARCHITECTURE
+
+The application must contain four main pages:
+
+1. Landing Page
+2. Chat Interface (main AI interaction area)
+3. Dashboard Page (full analytics view)
+4. CSV Upload Page
+
+---
+
+1. LANDING PAGE
+
+Create a modern SaaS landing page for the AI dashboard product.
+
+Sections required:
+
+Hero Section
+Headline:
+"Conversational AI for Instant Business Intelligence Dashboards"
+
+Subheadline:
+Generate powerful analytics dashboards instantly using natural language. No SQL. No complex BI tools.
+
+Buttons:
+Try Demo
+View GitHub
+
+Hero Visual:
+Show a preview image of a dashboard with charts.
+
+---
+
+Problem Section
+
+Explain the business problem:
+
+Most companies rely on technical teams to generate reports and dashboards. Business users cannot easily access insights because they do not know SQL or how to configure BI tools.
+
+---
+
+Solution Section
+
+Explain the product solution:
+
+Users can simply ask questions in natural language, and the AI system will generate dashboards automatically.
+
+Example queries:
+
+"Show monthly sales revenue by region"
+
+"Compare product category sales"
+
+"Display revenue growth over time"
+
+---
+
+Features Section
+
+Display feature cards with icons.
+
+Features include:
+
+Natural Language Analytics
+Ask questions about your data like a conversation.
+
+AI Chart Selection
+The system automatically chooses the best visualization.
+
+Interactive Dashboards
+Charts support hover tooltips and filtering.
+
+Follow-up Queries
+Users can refine dashboards with additional prompts.
+
+CSV Upload Support
+Users can upload their own datasets.
+
+Real-Time Insights
+Dashboards are generated instantly.
+
+---
+
+Tech Stack Section
+
+Display icons or labels for:
+
+Next.js
+Gemini API
+FastAPI or Node backend
+Recharts
+CSV / SQL database
+
+---
+
+Call to Action
+
+Button:
+Start Exploring Your Data
+
+---
+
+2. CHAT INTERFACE (MAIN PRODUCT EXPERIENCE)
+
+Create a ChatGPT-style interface.
+
+Layout:
+
+Left Sidebar
+Main Chat Area
+Input Box at the bottom
+
+---
+
+Sidebar should contain:
+
+Application title
+New Chat button
+Chat history list
+Upload Dataset button
+Pinned Dashboards section
+
+---
+
+Main Chat Area
+
+This is where conversation happens.
+
+Messages include:
+
+User messages
+AI messages
+Dashboard preview components
+
+Example flow:
+
+User message:
+"Show revenue by region"
+
+AI message:
+"Generating dashboard..."
+
+Then render a dashboard preview.
+
+---
+
+3. DASHBOARD PREVIEW (INSIDE CHAT)
+
+When the AI generates a response, display a dashboard preview card inside the chat.
+
+This preview must include:
+
+Maximum 3 charts
+Bar chart
+Line chart
+Pie chart
+
+Below the charts show AI-generated insight text.
+
+Example:
+
+Insight:
+Revenue increased by 24% in Q3.
+The East region is the top-performing region.
+
+At the bottom include a button:
+
+"Open Full Dashboard"
+
+---
+
+4. FULL DASHBOARD PAGE
+
+Create a dedicated dashboard page that shows a full analytics dashboard.
+
+This page should reuse the chart components used in the preview.
+
+The dashboard page should contain:
+
+KPI cards
+Total Revenue
+Total Orders
+Total Customers
+
+Charts grid:
+
+Revenue vs Expenses (Line chart)
+Monthly Sales (Bar chart)
+Product Categories (Donut chart)
+
+Additional analytics:
+
+Customer growth
+Traffic channels
+User retention
+
+---
+
+5. CSV UPLOAD PAGE
+
+Create a page where users can upload datasets.
+
+Design:
+
+Drag and drop upload area
+
+Text:
+"Upload your CSV dataset to start analyzing your data."
+
+After upload:
+
+Display detected columns.
+
+Example:
+
+Columns detected:
+Region
+Revenue
+Date
+Category
+
+After successful upload redirect user to the Chat page.
+
+---
+
+6. CHAT INPUT COMPONENT
+
+At the bottom of the chat interface create a text input field.
+
+Placeholder text:
+"Ask a question about your data..."
+
+Below the input display example prompts:
+
+Try asking:
+Show revenue by region
+Compare product categories
+Monthly sales trend
+
+---
+
+7. LOADING EXPERIENCE
+
+When AI is generating dashboards show loading steps:
+
+Analyzing dataset
+Generating SQL query
+Selecting chart types
+Rendering dashboard
+
+Then display the dashboard preview.
+
+---
+
+8. COMPONENT STRUCTURE
+
+Organize the project using reusable components.
+
+Pages:
+
+/pages
+landing
+chat
+dashboard
+upload
+
+Components:
+
+Navbar
+Sidebar
+ChatMessage
+DashboardPreview
+DashboardFull
+CSVUploader
+ChartCard
+
+Charts:
+
+BarChart
+LineChart
+PieChart
+
+---
+
+9. DESIGN STYLE
+
+Use modern SaaS UI design with:
+
+rounded cards
+soft shadows
+clean typography
+TailwindCSS layout
+responsive grid system
+
+The UI should feel similar to modern AI tools.
+
+---
+
+Important instruction:
+
+Do NOT regenerate chart logic if it already exists in the project.
+
+Reuse existing dashboard chart components and wrap them inside a DashboardPreview component for chat messages.
+
+---
+
+Goal of the UI:
+
+Create a professional AI-powered analytics tool that allows users to chat with their data and generate dashboards instantly.

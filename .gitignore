@@ -1,0 +1,2 @@
+# Exclude the ai-marketing-dashboard folder (backend stays local only)
+ai-marketing-dashboard/

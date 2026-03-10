@@ -1,0 +1,215 @@
+See, actually this is my problem statement. They wanted this Power BI charts and everything, but I am not at all understanding what designs, what should I use. So, that's why I got this Tailwind plus all these websites. So, generate exactly as shown in the website, the charts and everything should be same as this as shown in the website. See, I have kept two to three links and four links. So, that what should you do is mix up all the links and everything and mix up all the links features. See, take one feature that looks like ultra premium, which is perfectly sets to my hackathon and everything. So, give that for that, mix up all the other features which are not included in that feature. So, like that, mix up all the features, what are all included in all the things, so that it perfectly generates to my website. And also include all the features perfectly, so that it will perfectly suit to my website and it , like not best prompt. It should be like best, best, and so that it will generate the perfectly.Dataset
+ 
+Description
+ 
+General
+ 
+Overview:
+ 
+This dataset represents a comprehensive log of digital marketing campaign performances. It captures 
+end-to-end campaign metrics, starting from top-of-funnel engagement (impressions, clicks) down to 
+bottom-of-funnel results (leads, conversions, revenue). Additionally, it includes strategic metadata 
+about each campaign, such as the intended audience, channels utilized, duration, language, and 
+calculated efficiency metrics like Return on Investment (ROI) and Acquisition Cost. 
+Domain:
+ 
+Digital
+ 
+Marketing
+ and 
+E-commerce/Retail
+ domains, specifically tailored for analyzing promotional 
+initiatives for "Nykaa", a major beauty and lifestyle retail brand. 
+Potential
+ 
+Use
+ 
+Cases:
+ 
+● 
+Marketing
+ 
+Mix
+ 
+Modeling
+ 
+(MMM):
+ Analyzing which combinations of Campaign_Type, 
+Channel_Used, and Language yield the highest ROI to optimize future marketing budgets. 
+● 
+Customer
+ 
+Acquisition
+ 
+Cost
+ 
+(CAC)
+ 
+Optimization:
+ Utilizing machine learning to predict 
+Acquisition_Cost based on the targeted demographic and campaign duration, helping to 
+identify the most cost-effective growth strategies. 
+● 
+Audience
+ 
+Targeting
+ 
+Efficiency:
+ Comparing Target_Audience against the actual 
+Customer_Segment that converted to refine future campaign personalization and reduce 
+wasted impressions. 
+Data
+ 
+Dictionary
+ 
+Column
+ 
+Name
+ 
+Campaign_ID 
+Campaign_Type 
+Data
+ 
+Type
+ 
+String 
+String / Categorical 
+Description
+ 
+A unique alphanumeric 
+identifier assigned to 
+each marketing 
+campaign. 
+Sample
+ 
+Values
+ 
+NY-CMP-1000, 
+NY-CMP-1001 
+The broad strategy or 
+classification of the 
+marketing campaign. 
+Target_Audience 
+Duration 
+String / Categorical 
+Integer 
+The intended 
+demographic or 
+consumer group the 
+campaign was designed 
+to reach. 
+The length of time the 
+campaign ran ( 
+Social Media, Paid Ads 
+College Students, Tier 2 
+City Customers 
+21, 18 
+measured in days). 
+Channel_Used String / Categorical The specific digital 
+platform(s) or 
+medium(s) utilized to 
+distribute the campaign. 
+"WhatsApp, YouTube", 
+YouTube 
+Impressions Integer The total number of 
+times the campaign 
+content was displayed to 
+users. 
+57804, 91801 
+Clicks Integer The total number of 
+times users actively 
+clicked on the campaign 
+content. 
+6156, 3321 
+Leads Integer The number of potential 
+customers or interested 
+prospects generated 
+from the clicks. 
+3616, 1971 
+Conversions Integer The number of leads 
+that successfully 
+completed the desired 
+action (e.g., making a 
+purchase). 
+2355, 1357 
+Revenue Float / Integer The total monetary value 
+generated as a direct 
+result of the campaign 
+conversions. 
+1867515, 1046247 
+Acquisition_Cost Float The calculated cost to 
+acquire a single 
+customer or lead 
+through the campaign. 
+111.03, 180.83 
+ROI Float Return on Investment; a 
+performance measure 
+evaluating the efficiency 
+or profitability of the 
+campaign. 
+6.14, 3.26 
+Language String / Categorical The primary language 
+used in the campaign's 
+messaging and creatives. 
+Hindi, English 
+Engagement_Score Float A computed metric 
+indicating the level of 
+qualitative user 
+interaction with the 
+20.98, 7.24 
+campaign. 
+Customer_Segment String / Categorical The primary audience 
+group that actually 
+engaged or converted 
+during the campaign. 
+College Students, 
+Working Women 
+Date Datetime The specific date 
+associated with the 
+campaign (format 
+DD-MM-YYYY), 
+representing the launch, 
+execution, or recording 
+date. 
+29-04-2025, 06-04-2025 
+  Conversational AI for Instant Business Intelligence Dashboards
+
+Background & Context
+In today’s fast-paced environment, data is a company's most valuable asset. However, accessing insights often requires technical skills like SQL or navigating complex Business Intelligence (BI) tools. This creates a bottleneck where data teams are overwhelmed with basic reporting requests, and business users are left waiting days for simple dashboards.
+
+Business Problem Statement
+Build an intelligent system that allows non-technical users to generate fully functional, interactive data dashboards using only natural language prompts.
+The solution must take a plain-English request (e.g., "Show me the monthly sales revenue for Q3 broken down by region and highlight the top-performing product category"), query the underlying data, select the most appropriate chart types, and render a cohesive, interactive dashboard in real-time.
+
+Target Persona
+The Non-Technical Executive (CXO): They know what business questions they want to ask but do not know how to write database queries or configure BI visualization settings.
+
+Expected Deliverables
+A working, deployable prototype (Web App).
+A link to the public GitHub repository.
+A 10-minute presentation showcasing the tool answering at least three distinct, progressively complex text queries.
+
+Recommended Tech Stack
+Frontend: React, Next.js, Vue, or rapid-prototyping frameworks like Streamlit or Gradio.
+Charting and Visualization Libraries: Recharts, Chart.js, D3.js, or Plotly.
+Backend and API: Python (FastAPI, Flask) or Node.js (Express).
+LLM Integration: Google Gemini API (via Google AI Studio).
+Database or  Storage: CSV files, SQLite, or PostgreSQL.
+
+Evaluation Framework
+Accuracy (40)
+Data Retrieval: Did the LLM generate the correct SQL/query to fetch the right data based on the prompt?
+Contextual Chart Selection: Did the system choose the correct visual representation? (e.g., a line chart for time-series data, a pie chart for parts-of-a-whole).
+Error Handling: How gracefully does the application handle vague, ambiguous, or highly complex user prompts?
+Aesthetics & UX (30)
+Design: Is the dashboard visually appealing, clean, and modern?
+Interactivity: Can the user interact with the generated charts (e.g., hover for tooltips, zoom, filter)?
+User Flow: Is the text-input interface intuitive? Is there a loading state or progress indicator while the dashboard is generating?
+Approach & Innovation (30)
+Architecture: How robust is the pipeline from text -> LLM -> Database -> Frontend?
+Prompt Engineering: Did the team use clever system prompts, RAG (Retrieval-Augmented Generation), or agentic workflows to ensure high-quality outputs?
+Hallucination Handling: Does the system accurately report when it cannot answer a query based on the available data, rather than making up numbers?
+
+Bonus Points
+Follow-up Questions (10): Allow the user to "chat with the dashboard" to filter or alter the generated charts (e.g., "Now filter this to only show the East Coast").
+Data Format Agnostic (20): The ability for users to upload their own CSV file and immediately start prompting it, rather than relying on a hardcoded database.  So that's why I don't know what should I have implement, so that's why I give an all you the all the Power BI and everything. So what you do is generate all the perfectly the big website perfectly and take these images also. These images also should be included in that future. But generate exactly as shown in those website links, so that it looks like perfectly SaaS 10 million type of website. Generate perfectly. Don't do anything extra. Generate perfectly how it's shown, so that it correctly responds to every user  So generate perfectly.
