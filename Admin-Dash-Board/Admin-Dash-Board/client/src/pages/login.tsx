@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from "react";
+﻿import { useState, FormEvent, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    document.title = "Login - InsightAI";
+    document.title = "Login - Artha";
   }, []);
 
   const handleSubmit = (e: FormEvent) => {
@@ -34,7 +34,7 @@ export default function LoginPage() {
               ✦
             </div>
             <div className="text-left">
-              <CardTitle className="text-xl font-bold text-[#0F172A]">InsightAI</CardTitle>
+              <CardTitle className="text-xl font-bold text-[#0F172A]">Artha</CardTitle>
               <CardDescription className="text-sm text-[#64748B]">
                 AI-Powered Marketing Analytics
               </CardDescription>

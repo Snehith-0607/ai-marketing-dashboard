@@ -1,4 +1,4 @@
-import { Search, Menu, Bell, MessageSquare, ChevronDown, Zap } from "lucide-react";
+﻿import { Search, Menu, Bell, MessageSquare, ChevronDown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Header({ onMenuToggle, title }: { onMenuToggle: () => void; title?: string }) {
@@ -55,13 +55,13 @@ export default function Header({ onMenuToggle, title }: { onMenuToggle: () => vo
           <button
             className="relative p-2.5 rounded-xl hover:bg-[#F1F5F9] text-[#64748B] transition-colors"
             data-testid="button-messages"
-            onClick={() => alert("No new messages. Start a conversation in AI Chat!")}
+            onClick={() => alert("No new messages. Start a conversation in Artha Lens!")}
           >
             <MessageSquare className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#465FFF] rounded-full" />
           </button>
 
-          <div className="flex items-center gap-3 ml-2 pl-4 border-l border-[#E2E8F0] cursor-pointer hover:opacity-80 transition-opacity" onClick={() => alert("Profile Settings\n\nUser: InsightAI User\nEmail: user@insightai.com\nPlan: Pro")}>
+          <div className="flex items-center gap-3 ml-2 pl-4 border-l border-[#E2E8F0] cursor-pointer hover:opacity-80 transition-opacity" onClick={() => alert("Profile Settings\n\nUser: Artha User\nEmail: user@Artha.com\nPlan: Pro")}>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#465FFF] to-[#7B8AFF] flex items-center justify-center text-white text-sm font-semibold">
               A
             </div>

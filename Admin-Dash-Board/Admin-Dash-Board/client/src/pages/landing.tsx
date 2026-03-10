@@ -47,17 +47,23 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#465FFF] to-[#7B8AFF] rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900" data-testid="text-logo">InsightAI</span>
+          <div
+            className="flex items-center gap-2.5 cursor-pointer"
+            onClick={() => window.location.href = "/"}
+          >
+            <img
+              src="/artha-nav-logo.png"
+              alt="Artha"
+              style={{ height: "36px", width: "auto", objectFit: "contain" }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+            />
+            <span className="text-xl font-bold text-gray-900" data-testid="text-logo">Artha</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: "Upload Data", path: "/upload" },
-              { label: "AI Chat", path: "/chat" },
+              { label: "Artha Lens", path: "/chat" },
               { label: "Dashboard", path: "/dashboard" },
             ].map((item) => (
               <button
@@ -132,10 +138,17 @@ function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
         >
+          <img
+            src="/artha-hero-logo.png"
+            alt="Artha"
+            style={{ height: "80px", width: "auto", objectFit: "contain", marginBottom: "16px" }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+          />
           <div className="inline-flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-full px-4 py-1.5 mb-6 text-xs text-gray-500 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-[#465FFF]" />
-            AI-Powered Business Intelligence
+            AI-Powered Analytics — Find Meaning in Your Data
             <ChevronRight className="w-3 h-3" />
           </div>
         </motion.div>
@@ -147,11 +160,11 @@ function HeroSection() {
           className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-[1.1] max-w-4xl mx-auto tracking-tight"
           data-testid="text-hero-title"
         >
-          Conversational AI for{" "}
+          Find{" "}
           <span className="bg-gradient-to-r from-[#465FFF] to-[#7B8AFF] bg-clip-text text-transparent">
-            Instant Business Intelligence
+            Meaning
           </span>{" "}
-          Dashboards
+          in Your Data
         </motion.h1>
 
         <motion.p
@@ -161,9 +174,71 @@ function HeroSection() {
           className="mt-6 text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed"
           data-testid="text-hero-subtitle"
         >
-          Generate powerful analytics dashboards instantly using natural language. 
-          No SQL. No complex BI tools. Just ask questions and get insights.
+          Upload your dataset, ask questions in plain English, and get 
+          AI-powered insights with beautiful dashboards. No SQL needed.
         </motion.p>
+
+        {/* ─── Marquee Ticker ─── */}
+        <div style={{
+          width: "100vw",
+          position: "relative",
+          left: "50%",
+          right: "50%",
+          marginLeft: "-50vw",
+          marginRight: "-50vw",
+          overflow: "hidden",
+          background: "#465FFF",
+          padding: "10px 0",
+          marginBottom: "32px",
+          marginTop: "24px"
+        }}>
+          <div style={{
+            display: "inline-flex",
+            animation: "marquee 30s linear infinite",
+            whiteSpace: "nowrap"
+          }}>
+            {[
+              "Revenue by Campaign", "ROI Analysis", "Conversion Trends",
+              "Channel Performance", "Engagement Score", "Customer Segments",
+              "Acquisition Cost", "Monthly Trends", "Top Performers",
+              "Language Analysis", "What-If Simulator", "Anomaly Detection",
+              "Executive Reports",
+              "Revenue by Campaign", "ROI Analysis", "Conversion Trends",
+              "Channel Performance", "Engagement Score", "Customer Segments",
+              "Acquisition Cost", "Monthly Trends", "Top Performers",
+              "Language Analysis", "What-If Simulator", "Anomaly Detection",
+              "Executive Reports",
+            ].map((item, i) => (
+              <span key={i} style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "16px",
+                padding: "0 20px",
+                fontSize: "11px",
+                fontWeight: "600",
+                color: "white",
+                letterSpacing: "1px",
+                textTransform: "uppercase" as const,
+                opacity: 0.9
+              }}>
+                {item}
+                <span style={{
+                  display: "inline-block",
+                  width: "3px",
+                  height: "3px",
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.4)"
+                }}/>
+              </span>
+            ))}
+          </div>
+        </div>
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(0) }
+            100% { transform: translateX(-50%) }
+          }
+        `}</style>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -210,7 +285,7 @@ function HeroSection() {
 }
 
 function TrustedBy() {
-  const brands = ["Acme Corp", "TechVentures", "DataFlow", "CloudSync", "NextGen AI"];
+  const brands = ["Nykaa", "Swiggy", "Zomato", "Meesho", "Razorpay"];
   return (
     <motion.section {...fadeUp} className="py-14 px-4 sm:px-6 lg:px-8 bg-white border-b border-gray-50">
       <div className="max-w-5xl mx-auto text-center">
@@ -222,6 +297,47 @@ function TrustedBy() {
             </span>
           ))}
         </div>
+      </div>
+
+      {/* ─── Stats Bar ─── */}
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: "56px",
+        padding: "36px 24px",
+        borderTop: "1px solid #f1f5f9",
+        borderBottom: "1px solid #f1f5f9",
+        marginTop: "32px",
+        flexWrap: "wrap" as const
+      }}>
+        {[
+          { number: "55,555+", label: "Records Analyzed" },
+          { number: "< 2s", label: "Response Time" },
+          { number: "10+", label: "Chart Types" },
+          { number: "100%", label: "Natural Language" }
+        ].map((stat, i) => (
+          <div key={i} style={{textAlign: "center" as const}}>
+            <div style={{
+              fontSize: "30px",
+              fontWeight: "800",
+              color: "#465FFF",
+              letterSpacing: "-1px",
+              marginBottom: "4px",
+              lineHeight: 1
+            }}>
+              {stat.number}
+            </div>
+            <div style={{
+              fontSize: "11px",
+              color: "#94a3b8",
+              fontWeight: "600",
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.8px"
+            }}>
+              {stat.label}
+            </div>
+          </div>
+        ))}
       </div>
     </motion.section>
   );
@@ -321,6 +437,52 @@ function FeaturesSection() {
   ];
 
   return (
+    <>
+    {/* ─── How It Works ─── */}
+    <div style={{
+      maxWidth: "960px",
+      margin: "0 auto 72px",
+      padding: "0 24px"
+    }}>
+      <div style={{ textAlign: "center" as const, marginBottom: "44px" }}>
+        <div style={{
+          fontSize: "11px", fontWeight: "700", color: "#465FFF",
+          textTransform: "uppercase" as const, letterSpacing: "2px", marginBottom: "10px"
+        }}>HOW IT WORKS</div>
+        <div style={{
+          fontSize: "30px", fontWeight: "800", color: "#1e293b",
+          letterSpacing: "-0.5px", lineHeight: 1.2
+        }}>From Question to Dashboard in 3 Steps</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+        {[
+          { step: "01", title: "Upload Your Data", desc: "Drag and drop any CSV file. The system instantly detects columns, data types, and schema automatically.", color: "#465FFF" },
+          { step: "02", title: "Ask in Plain English", desc: "Type any business question naturally. No SQL, no coding required. AI understands context and intent.", color: "#7B8AFF" },
+          { step: "03", title: "Get Instant Dashboards", desc: "AI selects the right chart, fetches real data, and delivers actionable insights in under 2 seconds.", color: "#10b981" }
+        ].map((s, i) => (
+          <div key={i} style={{
+            background: "white", borderRadius: "16px", padding: "28px 24px",
+            border: "1px solid #f1f5f9", position: "relative" as const, overflow: "hidden" as const,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)"
+          }}>
+            <div style={{
+              position: "absolute" as const, top: "12px", right: "16px",
+              fontSize: "52px", fontWeight: "900", color: s.color + "08",
+              letterSpacing: "-2px", lineHeight: 1, userSelect: "none" as const
+            }}>{s.step}</div>
+            <div style={{
+              width: "38px", height: "38px", borderRadius: "10px",
+              background: s.color + "12", display: "flex", alignItems: "center",
+              justifyContent: "center", fontSize: "13px", fontWeight: "800",
+              color: s.color, marginBottom: "16px"
+            }}>{s.step}</div>
+            <div style={{ fontSize: "15px", fontWeight: "700", color: "#1e293b", marginBottom: "8px" }}>{s.title}</div>
+            <div style={{ fontSize: "13px", color: "#64748b", lineHeight: "1.7" }}>{s.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
     <motion.section {...fadeUp} className="py-20 px-4 sm:px-6 lg:px-8 bg-white" id="features">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-14">
@@ -354,6 +516,7 @@ function FeaturesSection() {
         </div>
       </div>
     </motion.section>
+    </>
   );
 }
 
@@ -398,6 +561,66 @@ function CTASection() {
   const [, navigate] = useLocation();
 
   return (
+    <>
+    {/* ─── Sample Queries Dark Section ─── */}
+    <div style={{
+      background: "#0f172a",
+      padding: "72px 24px",
+      marginTop: "0"
+    }}>
+      <div style={{ maxWidth: "880px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center" as const, marginBottom: "44px" }}>
+          <div style={{
+            fontSize: "11px", fontWeight: "700", color: "#465FFF",
+            textTransform: "uppercase" as const, letterSpacing: "2px", marginBottom: "10px"
+          }}>EXAMPLE QUERIES</div>
+          <div style={{ fontSize: "30px", fontWeight: "800", color: "white", letterSpacing: "-0.5px" }}>
+            Ask Anything About Your Data
+          </div>
+          <div style={{ fontSize: "14px", color: "#64748b", marginTop: "10px" }}>
+            Type these exact questions or anything like them
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          {[
+            "Show me revenue by campaign type",
+            "Which channel has the highest ROI?",
+            "What if we double the Instagram budget?",
+            "Compare conversions by language",
+            "Show monthly revenue trend over time",
+            "Analyze engagement by customer segment",
+            "Top 5 performing campaigns by revenue",
+            "Generate an executive report"
+          ].map((q, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: "12px",
+              padding: "14px 18px", background: "rgba(255,255,255,0.03)",
+              borderRadius: "10px", border: "1px solid rgba(255,255,255,0.07)",
+              transition: "all 0.2s", cursor: "default"
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "rgba(70,95,255,0.15)";
+              e.currentTarget.style.borderColor = "rgba(70,95,255,0.4)";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+            }}
+            >
+              <span style={{
+                width: "5px", height: "5px", borderRadius: "50%",
+                background: "#465FFF", flexShrink: 0
+              }}/>
+              <span style={{
+                fontSize: "13px", color: "rgba(255,255,255,0.75)",
+                fontWeight: "400", lineHeight: 1.4
+              }}>{q}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
     <motion.section {...fadeUp} className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-4xl mx-auto">
         <div className="bg-gradient-to-br from-[#465FFF] to-[#3A50E0] rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden">
@@ -423,6 +646,7 @@ function CTASection() {
         </div>
       </div>
     </motion.section>
+    </>
   );
 }
 
@@ -432,13 +656,16 @@ function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#465FFF] to-[#7B8AFF] rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">InsightAI</span>
+            <img
+              src="/artha-nav-logo.png"
+              alt="Artha"
+              style={{ height: "32px", width: "auto", objectFit: "contain" }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none" }}
+            />
+            <span className="text-lg font-bold text-gray-900">Artha</span>
           </div>
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} InsightAI. All rights reserved.
+            &copy; {new Date().getFullYear()} Artha. All rights reserved.
           </p>
         </div>
       </div>
@@ -448,7 +675,7 @@ function Footer() {
 
 export default function LandingPage() {
   useEffect(() => {
-    document.title = "InsightAI - AI Marketing Analytics";
+    document.title = "Artha — Find Meaning in Your Data";
   }, []);
 
   return (

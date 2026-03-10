@@ -1,162 +1,383 @@
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { motion } from "framer-motion";
-import { ExternalLink, Pin, Download } from "lucide-react";
-import { useLocation } from "wouter";
+import { useState, useEffect, useRef } from "react";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const barData = [
-  { region: "East", revenue: 4200 },
-  { region: "West", revenue: 3800 },
-  { region: "North", revenue: 3100 },
-  { region: "South", revenue: 2900 },
-  { region: "Central", revenue: 2200 },
-];
-
-const lineData = [
-  { month: "Jan", value: 2100 },
-  { month: "Feb", value: 2400 },
-  { month: "Mar", value: 2200 },
-  { month: "Apr", value: 2800 },
-  { month: "May", value: 3200 },
-  { month: "Jun", value: 3600 },
-];
-
-const pieData = [
-  { name: "Product A", value: 40 },
-  { name: "Product B", value: 30 },
-  { name: "Product C", value: 20 },
-  { name: "Product D", value: 10 },
-];
-
-const COLORS = ["#465FFF", "#10B981", "#F59E0B", "#EF4444"];
+const COLORS = ["#465FFF", "#FF6B35", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
 
 interface DashboardPreviewProps {
   chartType?: string;
   chartData?: any[];
   chartTitle?: string;
   insight?: string;
+  compact?: boolean;
 }
 
 export default function DashboardPreview({
-  chartType,
-  chartData,
-  chartTitle,
-  insight,
+  chartType = "bar",
+  chartData = [],
+  chartTitle = "Analysis Result",
+  insight = "",
+  compact = false,
 }: DashboardPreviewProps) {
-  const [, navigate] = useLocation();
+  const [backendData, setBackendData] = useState<any[]>([]);
+  const chartRef = useRef<HTMLDivElement>(null);
 
-  const hasChartData = Array.isArray(chartData) && chartData.length > 0;
-  const barChartData = hasChartData ? chartData : barData;
-  const lineChartData = hasChartData ? chartData : lineData;
-  const pieChartData = hasChartData ? chartData : pieData;
-  const effectiveTitle = chartTitle || "Dashboard Preview";
-  const effectiveInsight =
-    insight ||
-    "Revenue increased by 24% in Q3. The East region is the top-performing region with $4,200 in revenue. Product A dominates with 40% market share.";
+  // Fetch real data from backend as fallback
+  useEffect(() => {
+    if (!chartData || chartData.length === 0) {
+      fetch("http://localhost:8000/analysis?t=" + Date.now())
+        .then((r) => r.json())
+        .then((data) => {
+          const firstAvailableChart =
+            data?.charts?.revenue_by_campaign ||
+            data?.charts?.roi_by_channel ||
+            data?.charts?.impressions_by_channel ||
+            data?.charts?.engagement_by_segment ||
+            [];
+          setBackendData(firstAvailableChart);
+        })
+        .catch(() => {
+          setBackendData([]);
+        });
+    }
+  }, [chartData]);
+
+  const rawData = chartData && chartData.length > 0 ? chartData : backendData;
+
+  const normalizedData = rawData
+    .map((item) => ({
+      name: String(
+        item.name ??
+          item.category ??
+          item.month ??
+          Object.values(item)[0] ??
+          "?"
+      ),
+      value: Number(
+        item.value ??
+          item.revenue ??
+          item.total ??
+          Object.values(item)[1] ??
+          0
+      ),
+    }))
+    .filter((item) => item.name && item.value > 0);
+
+  const formatValue = (v: any) => {
+    if (typeof v === "number" && v > 10000000)
+      return "₹" + (v / 10000000).toFixed(1) + "Cr";
+    if (typeof v === "number" && v > 100000)
+      return (v / 100000).toFixed(1) + "L";
+    if (typeof v === "number" && v > 1000)
+      return (v / 1000).toFixed(1) + "K";
+    return v;
+  };
+
+  const getConfidence = (data: any[]) => {
+    if (!data || data.length === 0) {
+      return { score: 0, label: "No Data", color: "#ef4444" };
+    }
+    const values = data.map((d) => d.value || 0);
+    const avg =
+      values.reduce((a, b) => a + b, 0) / (values.length || 1);
+    const variance =
+      values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) /
+      (values.length || 1);
+    const stdDev = Math.sqrt(variance);
+    const coeffVariation = avg > 0 ? stdDev / avg : 0;
+
+    let score = 0;
+    if (data.length >= 5) score += 40;
+    else if (data.length >= 3) score += 25;
+    else score += 10;
+
+    if (coeffVariation > 0.3) score += 40;
+    else if (coeffVariation > 0.1) score += 25;
+    else score += 10;
+
+    score += Math.min(data.length * 4, 20);
+    score = Math.min(score, 98);
+
+    if (score >= 75)
+      return { score, label: "High Confidence", color: "#10b981" };
+    if (score >= 50)
+      return { score, label: "Medium Confidence", color: "#f59e0b" };
+    return { score, label: "Low Confidence", color: "#ef4444" };
+  };
+
+  if (normalizedData.length === 0) {
+    return (
+      <div
+        style={{
+          background: "white",
+          borderRadius: "12px",
+          border: "1px solid #E2E8F0",
+          padding: "16px",
+          marginTop: "8px",
+          width: "100%",
+          maxWidth: "520px",
+          textAlign: "center",
+          color: "#94A3B8",
+          fontSize: "13px",
+        }}
+      >
+        <p>⏳ Loading chart data...</p>
+        <p style={{ fontSize: "11px", marginTop: "4px" }}>
+          Make sure backend is running at localhost:8000
+        </p>
+      </div>
+    );
+  }
+
+  const downloadChart = async () => {
+    if (!chartRef.current) return;
+    const anyWin = window as any;
+    if (!anyWin.html2canvas) {
+      console.warn("html2canvas not available on window");
+      return;
+    }
+    const canvas = await anyWin.html2canvas(chartRef.current);
+    const link = document.createElement("a");
+    link.download = `${chartTitle || "chart"}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  const renderChart = () => {
+    if (chartType === "line") {
+      return (
+        <ResponsiveContainer width="100%" height={compact ? 160 : 200}>
+          <LineChart data={normalizedData}>
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 9 }}
+              interval="preserveStartEnd"
+            />
+            <YAxis tick={{ fontSize: 9 }} tickFormatter={formatValue} />
+            <Tooltip formatter={formatValue} />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="#465FFF"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    if (chartType === "pie" || chartType === "donut") {
+      return (
+        <ResponsiveContainer width="100%" height={compact ? 160 : 200}>
+          <PieChart>
+            <Pie
+              data={normalizedData}
+              cx="50%"
+              cy="50%"
+              innerRadius={chartType === "donut" ? 45 : 0}
+              outerRadius={75}
+              dataKey="value"
+            >
+              {normalizedData.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={formatValue} />
+          </PieChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    return (
+      <ResponsiveContainer width="100%" height={compact ? 160 : 200}>
+        <BarChart data={normalizedData}>
+          <XAxis
+            dataKey="name"
+            tick={{ fontSize: 9 }}
+            interval={0}
+            angle={-30}
+            textAnchor="end"
+            height={50}
+          />
+          <YAxis tick={{ fontSize: 9 }} tickFormatter={formatValue} />
+          <Tooltip formatter={formatValue} />
+          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            {normalizedData.map((_, i) => (
+              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden"
-      data-testid="card-dashboard-preview"
+    <div
+      style={{
+        background: "white",
+        borderRadius: "12px",
+        border: "1px solid #E2E8F0",
+        padding: "16px",
+        marginTop: "8px",
+        width: "100%",
+        maxWidth: "520px",
+      }}
     >
-      <div className="p-5 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F8FAFC] to-white">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-[#1C2434]">
-            {effectiveTitle}
-          </h4>
-          <div className="flex items-center gap-2">
-            <button className="p-1.5 rounded-lg hover:bg-[#F1F5F9] text-[#94A3B8]" data-testid="button-pin-dashboard">
-              <Pin className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 rounded-lg hover:bg-[#F1F5F9] text-[#94A3B8]" data-testid="button-download-dashboard">
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+      <button
+        onClick={downloadChart}
+        style={{
+          fontSize: "11px",
+          background: "transparent",
+          border: "1px solid #e2e8f0",
+          borderRadius: "6px",
+          padding: "4px 10px",
+          cursor: "pointer",
+          float: "right",
+          color: "#64748b",
+          marginBottom: "4px",
+        }}
+      >
+        ⬇ Save PNG
+      </button>
+      <p
+        style={{
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "#1C2434",
+          marginBottom: "12px",
+        }}
+      >
+        {chartTitle}
+      </p>
+
+      <div
+        ref={chartRef}
+        style={{ background: "white", padding: "8px", clear: "both" }}
+      >
+        {renderChart()}
       </div>
 
-      <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#F8FAFC] rounded-xl p-4">
-          <p className="text-xs text-[#94A3B8] mb-2">Revenue by Region</p>
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={barChartData} barSize={16}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-              <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1C2434", border: "none", borderRadius: "8px", color: "white", fontSize: "11px" }}
-              />
-              <Bar dataKey="revenue" fill="#465FFF" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      {normalizedData.length > 0 && (
+        (() => {
+          const confidence = getConfidence(normalizedData);
+          return (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "8px",
+                padding: "6px 10px",
+                background: "#f8fafc",
+                borderRadius: "8px",
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  height: "4px",
+                  background: "#e2e8f0",
+                  borderRadius: "2px",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: confidence.score + "%",
+                    background: confidence.color,
+                    borderRadius: "2px",
+                    transition: "width 1s ease",
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: confidence.color,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {confidence.label} · {confidence.score}%
+              </div>
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#94a3b8",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {normalizedData.length} data points
+              </div>
+            </div>
+          );
+        })()
+      )}
 
-        <div className="bg-[#F8FAFC] rounded-xl p-4">
-          <p className="text-xs text-[#94A3B8] mb-2">Revenue Growth</p>
-          <ResponsiveContainer width="100%" height={150}>
-            <LineChart data={lineChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1C2434", border: "none", borderRadius: "8px", color: "white", fontSize: "11px" }}
-              />
-              <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} dot={{ fill: "#10B981", r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-[#F8FAFC] rounded-xl p-4">
-          <p className="text-xs text-[#94A3B8] mb-2">Product Distribution</p>
-          <ResponsiveContainer width="100%" height={150}>
-            <PieChart>
-              <Pie data={pieChartData} cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={3} dataKey="value" strokeWidth={0}>
-                {pieChartData.map((_: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{ backgroundColor: "#1C2434", border: "none", borderRadius: "8px", color: "white", fontSize: "11px" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="px-5 pb-4">
-        <div className="bg-gradient-to-r from-[#EFF4FF] to-[#F8FAFC] rounded-xl p-4">
-          <p className="text-xs font-medium text-[#465FFF] mb-1">AI Insight</p>
-          <p className="text-sm text-[#64748B] leading-relaxed">
-            {effectiveInsight}
-          </p>
-        </div>
-      </div>
-
-      <div className="px-5 pb-5">
-        <button
-          className="w-full py-2.5 rounded-xl bg-[#465FFF] text-white text-sm font-medium hover:bg-[#3A50E0] transition-colors flex items-center justify-center gap-2"
-          data-testid="button-open-full-dashboard"
-          onClick={() => {
-            // Save AI response data to localStorage for Dashboard-Mirror to consume
-            try {
-              const dashboardPayload = {
-                chart: chartType || "bar",
-                title: chartTitle || "Dashboard Preview",
-                data: chartData || [],
-                insight: insight || "",
-              };
-              localStorage.setItem("insightai_dashboard_data", JSON.stringify(dashboardPayload));
-            } catch (e) {
-              console.warn("Failed to save dashboard data to localStorage:", e);
-            }
-            // Open Dashboard-Mirror running on port 5000
-            window.open("http://localhost:5000/dashboard", "_blank");
+      {insight && (
+        <div
+          style={{
+            background: "#EFF4FF",
+            borderRadius: "8px",
+            padding: "10px 12px",
+            marginTop: "12px",
           }}
         >
-          Open Full Dashboard
-          <ExternalLink className="w-4 h-4" />
-        </button>
-      </div>
-    </motion.div>
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#465FFF",
+              marginBottom: "4px",
+            }}
+          >
+            AI Insight
+          </p>
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#374151",
+              lineHeight: "1.5",
+              margin: 0,
+            }}
+          >
+            {insight}
+          </p>
+        </div>
+      )}
+
+      <button
+        onClick={() =>
+          window.open("http://localhost:5000/dashboard", "_blank")
+        }
+        style={{
+          width: "100%",
+          background: "#465FFF",
+          color: "white",
+          border: "none",
+          borderRadius: "8px",
+          padding: "10px",
+          marginTop: "12px",
+          cursor: "pointer",
+          fontSize: "13px",
+          fontWeight: 600,
+        }}
+      >
+        Open Full Dashboard ↗
+      </button>
+    </div>
   );
 }

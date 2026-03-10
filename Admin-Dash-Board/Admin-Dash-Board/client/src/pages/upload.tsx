@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+﻿import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import {
@@ -29,7 +29,7 @@ export default function UploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    document.title = "Upload Data - InsightAI";
+    document.title = "Upload Data - Artha";
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -116,7 +116,7 @@ export default function UploadPage() {
       const res = await fetch("http://localhost:8000/summary");
       if (res.ok) {
         const summary = await res.json();
-        localStorage.setItem("insightai_dashboard_data", JSON.stringify({
+        localStorage.setItem("Artha_dashboard_data", JSON.stringify({
           chart: "bar",
           title: "Dataset Analysis",
           data: summary.data || [],

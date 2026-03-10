@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { DollarSign, ShoppingCart, Users, TrendingUp, Calendar } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -151,7 +151,7 @@ export default function DashboardPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "insightai-dashboard.csv";
+    a.download = "Artha-dashboard.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -258,7 +258,7 @@ export default function DashboardPage() {
   }, [fetchData]);
 
   useEffect(() => {
-    document.title = "Dashboard - InsightAI";
+    document.title = "Dashboard - Artha";
   }, []);
 
   return (
@@ -279,7 +279,7 @@ export default function DashboardPage() {
           >
             {backendOnline ? (
               <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2">
-                ✅ Connected to InsightAI Backend
+                ✅ Connected to Artha Backend
               </div>
             ) : (
               <div className="px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700 flex items-center gap-2">

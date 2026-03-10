@@ -92,6 +92,26 @@ const channelItems = [
   { icon: Instagram, label: "Instagram" },
 ];
 
+const useCountUp = (target: number, duration = 1500) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!target) return;
+    let current = 0;
+    const increment = target / (duration / 16);
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return count;
+};
+
 function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMobile }: {
   activePage: string;
   onNavigate: (page: string) => void;
@@ -105,8 +125,12 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMobile }: {
     const fetchSidebarData = async () => {
       try {
         const [analysisRes, summaryRes] = await Promise.all([
-          fetch("http://localhost:8000/analysis"),
-          fetch("http://localhost:8000/summary"),
+          fetch("http://localhost:8000/analysis?t=" + Date.now(), {
+            cache: "no-store",
+          }),
+          fetch("http://localhost:8000/summary?t=" + Date.now(), {
+            cache: "no-store",
+          }),
         ]);
         const analysis = await analysisRes.json();
         const summary = await summaryRes.json();
@@ -125,7 +149,7 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMobile }: {
       : null;
   const projectName = uploadedFile
     ? uploadedFile.replace(/\.csv$/i, "")
-    : "InsightAI Project";
+    : "Artha Project";
 
   return (
     <>
@@ -139,18 +163,27 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMobile }: {
         flex flex-col h-screen
       `}>
         <div className="p-4 border-b border-gray-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl flex items-center justify-center text-white text-sm font-bold">
-              C
-            </div>
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => window.open("http://localhost:3000", "_blank")}
+            title="Go to Artha Lens"
+          >
+            <img
+              src="/artha-nav-logo.png"
+              alt="Artha"
+              className="w-10 h-10 rounded-xl object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
             <div>
               <p className="text-sm font-semibold text-gray-900" data-testid="text-company-name">
-                {sidebarData?.column_names ? "InsightAI" : "Catalyst"}
+                Artha
               </p>
               <p className="text-xs text-gray-400">
                 {sidebarData?.column_names
                   ? `${(sidebarData.rows ?? 0).toLocaleString()} records`
-                  : "Marketing & Sales"}
+                  : "Find Meaning in Data"}
               </p>
             </div>
           </div>
@@ -282,7 +315,7 @@ function Sidebar({ activePage, onNavigate, mobileOpen, onCloseMobile }: {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate" data-testid="text-user-name">
-                InsightAI User
+                Artha User
               </p>
               <p className="text-xs text-gray-400 truncate">
                 {projectName}
@@ -300,17 +333,23 @@ function DashboardHeader() {
   return (
     <header className="border-b border-gray-100 bg-white px-4 lg:px-6 py-3">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">
-            JB
+            AU
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900" data-testid="text-welcome">James Brown</h1>
-            <p className="text-xs text-gray-400">Welcome back to Catalyst</p>
+            <h1 className="text-lg font-semibold text-gray-900" data-testid="text-welcome">Artha User</h1>
+            <p className="text-xs text-gray-400">Welcome back</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open("http://localhost:3000", "_blank")}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-transparent border border-gray-200 rounded-lg cursor-pointer text-xs text-gray-500 font-medium hover:bg-gray-50 transition-colors"
+          >
+            ← Back to Artha Lens
+          </button>
           <Button size="icon" variant="ghost" data-testid="button-search">
             <Search className="w-4 h-4 text-gray-500" />
           </Button>
@@ -325,7 +364,7 @@ function DashboardHeader() {
             <Filter className="w-3 h-3 mr-1" /> Filter by
           </Button>
           <Button className="bg-orange-500 text-white text-xs rounded-lg hidden sm:flex" data-testid="button-new-product">
-            <Plus className="w-3 h-3 mr-1" /> New Products
+            <Download className="w-3 h-3 mr-1" /> Export PDF
           </Button>
         </div>
       </div>
@@ -470,67 +509,55 @@ function OverviewPage() {
   // ─── Fetch real data from backend ─────────────────────────────────
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [analysisRes, summaryRes] = await Promise.all([
-          fetch("http://localhost:8000/analysis"),
-          fetch("http://localhost:8000/summary"),
-        ]);
-
-        if (!analysisRes.ok) throw new Error("Backend not reachable");
-
-        const analysis = await analysisRes.json();
-        // Summary is primarily used for sidebar/branding and refresh tracking
-        await summaryRes.json().catch(() => null);
-
-        setAnalyticsData(analysis);
-        console.log("Real data loaded:", analysis);
-
-        sessionStorage.setItem(
-          "dashboardLastFetch",
-          Date.now().toString()
+        const res = await fetch(
+          "http://localhost:8000/analysis?t=" + Date.now(),
+          { cache: "no-store" }
         );
-      } catch (error) {
-        console.error("Failed to fetch analytics:", error);
+        if (!res.ok) throw new Error("offline");
+        const data = await res.json();
+        console.log("✅ OVERVIEW DATA:", data.kpis);
+        setAnalyticsData(data);
+        setIsOffline(false);
+      } catch (e) {
+        console.error("❌ FETCH FAILED:", e);
+        setIsOffline(true);
       } finally {
         setIsLoading(false);
       }
     };
 
-    const lastUploadTime = localStorage.getItem("lastUploadTime");
-    const dashboardLastFetch = sessionStorage.getItem("dashboardLastFetch");
-
-    if (
-      !dashboardLastFetch ||
-      (lastUploadTime &&
-        Number(lastUploadTime) > Number(dashboardLastFetch))
-    ) {
-      loadData();
-    } else {
-      loadData();
-    }
-
-    const interval = setInterval(loadData, 30000);
+    fetchData();
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   // ─── Derive display values ────────────────────────────────────────
   const kpis = analyticsData?.kpis || {};
 
-  const totalRevenue = kpis.total_revenue
-    ? "₹" + (kpis.total_revenue / 10000000).toFixed(1) + "Cr"
-    : "$128.32";
+  const animatedRevenue = useCountUp(kpis.total_revenue || 0);
+  const animatedImpressions = useCountUp(
+    kpis.total_impressions || 0
+  );
+  const animatedRoi = useCountUp(kpis.avg_roi || 0, 1000);
 
-  const totalImpressions = kpis.total_impressions
-    ? (kpis.total_impressions / 1000000).toFixed(1) + "M"
-    : "237,456";
+  const totalRevenue =
+    animatedRevenue > 0
+      ? "₹" + (animatedRevenue / 10000000).toFixed(1) + "Cr"
+      : "Loading...";
 
-  const avgRoi = kpis.avg_roi
-    ? kpis.avg_roi + "x ROI"
-    : "16.9%";
+  const totalImpressions =
+    animatedImpressions > 0
+      ? (animatedImpressions / 1000000).toFixed(1) + "M"
+      : "Loading...";
+
+  const avgRoi =
+    animatedRoi > 0 ? animatedRoi.toFixed(2) + "x ROI" : "Loading...";
 
   // Use real monthly revenue for the bar chart if available
   const realMonthlyRevenue = analyticsData?.charts?.monthly_revenue
@@ -573,7 +600,7 @@ function OverviewPage() {
             Loading live data...
           </span>
         )}
-        {!isLoading && analyticsData && (
+        {!isLoading && analyticsData && !isOffline && (
           <span style={{
             fontSize: "11px",
             background: "#dcfce7",
@@ -584,7 +611,7 @@ function OverviewPage() {
             ● Live — {analyticsData.rows?.toLocaleString()} rows
           </span>
         )}
-        {!isLoading && !analyticsData && (
+        {!isLoading && isOffline && (
           <span style={{
             fontSize: "11px",
             background: "#fef3c7",
@@ -698,6 +725,122 @@ function OverviewPage() {
           </div>
         </KPICard>
       </div>
+
+      {analyticsData && (
+        <div
+          style={{
+            background: "white",
+            borderRadius: "16px",
+            padding: "16px 20px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "20px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "50%",
+              background:
+                "conic-gradient(#10b981 " +
+                Math.min(
+                  Math.round((kpis.avg_roi || 0) * 10),
+                  100
+                ) +
+                "%, #f1f5f9 0%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                background: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "14px",
+                fontWeight: 700,
+                color: "#10b981",
+              }}
+            >
+              {Math.min(
+                Math.round((kpis.avg_roi || 0) * 10),
+                99
+              )}
+            </div>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#1e293b",
+                marginBottom: "2px",
+              }}
+            >
+              Dataset Health Score
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#64748b",
+              }}
+            >
+              {analyticsData.rows?.toLocaleString()} rows ·{" "}
+              {analyticsData.columns} columns · Avg ROI{" "}
+              {kpis.avg_roi}x · Top: {kpis.top_channel}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            {[
+              analyticsData.rows > 1000
+                ? "✅ Large Dataset"
+                : "⚠️ Small Dataset",
+              kpis.avg_roi > 3 ? "✅ High ROI" : "⚠️ Low ROI",
+              analyticsData.columns > 10
+                ? "✅ Rich Data"
+                : "⚠️ Limited Columns",
+              "✅ Live Connected",
+            ].map((badge, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: "10px",
+                  padding: "3px 8px",
+                  borderRadius: "20px",
+                  background: badge.startsWith("✅")
+                    ? "#f0fdf4"
+                    : "#fefce8",
+                  color: badge.startsWith("✅")
+                    ? "#15803d"
+                    : "#854d0e",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <Card className="p-4 bg-white border-gray-100" data-testid="card-visitors-channels">
@@ -848,7 +991,7 @@ function AnalyticsPage() {
   useEffect(() => {
     // Step 1: Check localStorage first
     try {
-      const stored = localStorage.getItem("insightai_dashboard_data");
+      const stored = localStorage.getItem("Artha_dashboard_data");
       if (stored) {
         const parsed = JSON.parse(stored);
         console.log("Found localStorage data:", parsed);
@@ -858,7 +1001,8 @@ function AnalyticsPage() {
     }
 
     // Step 2: Fetch real analytics from backend
-    fetch("http://localhost:8000/analysis")
+    console.log("Dashboard fetching real data...");
+    fetch("http://localhost:8000/analysis?t=" + Date.now(), { cache: "no-store" })
       .then((r) => {
         if (!r.ok) throw new Error("Backend error");
         return r.json();
@@ -868,7 +1012,7 @@ function AnalyticsPage() {
         setIsLoadingAnalytics(false);
         const now = new Date();
         setLastUpdated(now.toLocaleTimeString());
-        console.log("Analytics data loaded:", data);
+        console.log("Got data:", data?.kpis?.total_revenue);
       })
       .catch((e) => {
         console.warn("Could not fetch /analysis:", e);
@@ -1462,7 +1606,7 @@ export default function Dashboard() {
         pdf.addImage(imgData, "PNG", 10, yPos, imgWidth, imgHeight);
         remainingHeight -= (pageHeight - 20);
       }
-      pdf.save("insightai-dashboard.pdf");
+      pdf.save("Artha-dashboard.pdf");
     } catch (e) {
       console.error("PDF export failed:", e);
     } finally {
@@ -1503,7 +1647,7 @@ export default function Dashboard() {
           <button onClick={() => setMobileOpen(true)} data-testid="button-mobile-sidebar" aria-label="Open sidebar">
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <span className="text-sm font-semibold text-gray-900">Catalyst</span>
+          <span className="text-sm font-semibold text-gray-900">Artha</span>
         </div>
         <DashboardHeader />
 
@@ -1518,7 +1662,7 @@ export default function Dashboard() {
           >
             {backendOnline ? (
               <div className="px-4 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2">
-                ✅ Connected to InsightAI Backend
+                ✅ Connected to Artha Backend
               </div>
             ) : (
               <div className="px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700 flex items-center gap-2">

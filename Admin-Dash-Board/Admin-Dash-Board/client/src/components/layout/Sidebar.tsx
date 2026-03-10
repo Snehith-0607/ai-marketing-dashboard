@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,7 +27,7 @@ interface NavItem {
 }
 
 const menuItems: NavItem[] = [
-  { label: "AI Chat", icon: MessageSquare, path: "/chat" },
+  { label: "Artha Lens", icon: MessageSquare, path: "/chat" },
   {
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -173,7 +173,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
           <div className="w-9 h-9 bg-gradient-to-br from-[#465FFF] to-[#7B8AFF] rounded-xl flex items-center justify-center">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-[#1C2434]" data-testid="text-brand">InsightAI</h1>
+          <h1 className="text-xl font-bold text-[#1C2434]" data-testid="text-brand">Artha</h1>
         </Link>
 
         <div className="px-4 pt-4 pb-2">
@@ -280,8 +280,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
               A
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#1C2434]" data-testid="text-user-name">InsightAI User</p>
-              <p className="text-xs text-[#64748B]">user@insightai.com</p>
+              <p className="text-sm font-semibold text-[#1C2434]" data-testid="text-user-name">Artha User</p>
+              <p className="text-xs text-[#64748B]">user@Artha.com</p>
             </div>
           </div>
         </div>
