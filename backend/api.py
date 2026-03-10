@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from query_engine import generate_query
 from data_engine import run_query
 from insight_engine import generate_insight
+from chart_engine import select_chart
 from context_manager import store_query, get_context
 
 # Setup logging
@@ -71,6 +72,10 @@ def process_query(request: QueryRequest):
         # Convert pandas DataFrame to list of dictionaries for JSON payload
         data = df.to_dict(orient="records")
         logger.info(f"Query executed successfully, returned {len(data)} rows.")
+        
+        # Override chart type using the intelligent chart engine
+        chart = select_chart(question, df)
+        logger.info(f"Selected chart type: {chart}")
         
     except Exception as e:
         logger.error(f"SQL execution failed: {e}")
