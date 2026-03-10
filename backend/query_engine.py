@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_query(user_prompt: str) -> dict:
+def generate_query(user_prompt: str, context: str = "") -> dict:
     """
     Converts a natural language marketing analytics question into a
     structured JSON format with a SQL query, chart type, and title.
@@ -63,7 +63,10 @@ Chart types allowed:
 bar, line, pie, funnel
 """
 
-        prompt = f"{system_instruction}\n\nUser Question: {user_prompt}"
+        prompt = ""
+        if context:
+            prompt += f"{context}\n\n"
+        prompt += f"{system_instruction}\n\nUser Question: {user_prompt}"
 
         headers = {
             "Authorization": f"Bearer {api_key}",

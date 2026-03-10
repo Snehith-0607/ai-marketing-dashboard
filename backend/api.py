@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from query_engine import generate_query
 from data_engine import run_query
 from insight_engine import generate_insight
+from context_manager import store_query, get_context
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -39,9 +40,13 @@ def process_query(request: QueryRequest):
     question = request.question
     logger.info(f"Received question: {question}")
     
+    # Retrieve previous conversation context
+    context = get_context()
+    
     # 1. Generate query using LLM
     try:
-        query_info = generate_query(question)
+        # Pass the context to query generation
+        query_info = generate_query(question, context)
         
         # Assume query_info is a dictionary containing sql, chart, title
         sql = query_info.get("sql")
@@ -87,6 +92,9 @@ def process_query(request: QueryRequest):
         )
         
     # 4. Return the constructed response
+    # Only store query if the entire process succeeds
+    store_query(question)
+    
     return QueryResponse(
         chart=chart,
         title=title,
