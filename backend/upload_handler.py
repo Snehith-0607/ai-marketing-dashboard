@@ -13,7 +13,7 @@ def upload_dataset(file_bytes):
     """
 
     try:
-        df = pd.read_csv(io.BytesIO(file_bytes))
+        df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin-1")
     except UnicodeDecodeError:
         df = pd.read_csv(io.BytesIO(file_bytes), encoding="latin1",low_memory=False)
 
