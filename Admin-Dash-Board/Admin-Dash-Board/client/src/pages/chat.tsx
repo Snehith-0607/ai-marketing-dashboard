@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
@@ -379,6 +379,12 @@ interface Message {
    suggestions?: string[];
 }
 
+interface HistoryItem {
+  query: string;
+  timestamp: number;
+  sessionId: string;
+}
+
 interface Project {
   id: number;
   title: string;
@@ -431,10 +437,19 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [queryHistory, setQueryHistory] = useState<string[]>(() => {
+  const [queryHistory, setQueryHistory] = useState<HistoryItem[]>(() => {
     try {
-      const h = localStorage.getItem("queryHistory");
-      return h ? JSON.parse(h) : [];
+      const saved = localStorage.getItem("queryHistory");
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      // Handle both old string[] and new format
+      if (parsed.length > 0 && typeof parsed[0] === "string") {
+        return parsed.map((q: string) => ({
+          query: q,
+          timestamp: Date.now()
+        }));
+      }
+      return parsed;
     } catch {
       return [];
     }
@@ -443,6 +458,7 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState("chat");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [kpiData, setKpiData] = useState<any | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -457,13 +473,42 @@ export default function ChatPage() {
   const [showReport, setShowReport] = useState(false);
   const [reportContent, setReportContent] = useState("");
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => {
+    return "session_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  });
+
+  // Helper: save current messages to session storage
+  const saveSessionMessages = (sessionId: string, msgs: Message[]) => {
+    try {
+      const sessions = JSON.parse(localStorage.getItem("chatSessions") || "{}");
+      sessions[sessionId] = msgs.map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        type: m.type,
+        chartType: m.chartType,
+        chartData: m.chartData,
+        chartTitle: m.chartTitle,
+        insight: m.insight,
+        suggestions: m.suggestions,
+      }));
+      localStorage.setItem("chatSessions", JSON.stringify(sessions));
+    } catch {
+      // storage full or error, ignore
+    }
+  };
 
   useEffect(() => {
     document.title = "Artha Lens - Artha";
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -472,6 +517,50 @@ export default function ChatPage() {
       .then((d) => setKpiData(d))
       .catch(() => {});
   }, []);
+
+  // Listen for sidebar quick-action events
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { action, query, sessionId } = (e as CustomEvent).detail || {};
+      switch (action) {
+        case "report":
+          generateExecutiveReport();
+          break;
+        case "whatif":
+          setInput("What if we double the top channel budget?");
+          inputRef.current?.focus();
+          break;
+        case "anomaly":
+          setMessages([]);
+          setScanComplete(false);
+          runAnomalyDetection(setScanning, setScanComplete, setAnomalies);
+          break;
+        case "fullanalysis":
+          void handleSendMessage("give me full analysis");
+          break;
+        case "send":
+          if (query) void handleSendMessage(query);
+          break;
+        case "clearHistory":
+          setQueryHistory([]);
+          break;
+        case "restoreSession":
+          if (sessionId) {
+            try {
+              const sessions = JSON.parse(localStorage.getItem("chatSessions") || "{}");
+              const savedMsgs = sessions[sessionId];
+              if (savedMsgs && Array.isArray(savedMsgs) && savedMsgs.length > 0) {
+                setMessages(savedMsgs);
+                setCurrentSessionId(sessionId);
+              }
+            } catch {}
+          }
+          break;
+      }
+    };
+    window.addEventListener("artha-quick-action", handler);
+    return () => window.removeEventListener("artha-quick-action", handler);
+  }, []);;
 
   const startVoice = () => {
     const SpeechRecognition =
@@ -812,13 +901,19 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, filterMsg]);
 
         const updatedHistory = [
-          question,
-          ...queryHistory.filter((q: string) => q !== question),
-        ].slice(0, 6);
+          { query: question, timestamp: Date.now(), sessionId: currentSessionId },
+          ...queryHistory.filter((h: HistoryItem) => h.query !== question),
+        ].slice(0, 10);
         setQueryHistory(updatedHistory);
         try {
           localStorage.setItem("queryHistory", JSON.stringify(updatedHistory));
         } catch {}
+
+        // Save full session messages
+        setMessages((prev) => {
+          saveSessionMessages(currentSessionId, prev);
+          return prev;
+        });
 
         setIsLoading(false);
         return;
@@ -933,13 +1028,19 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, multiMsg]);
 
         const updatedHistory = [
-          question,
-          ...queryHistory.filter((q: string) => q !== question),
-        ].slice(0, 6);
+          { query: question, timestamp: Date.now(), sessionId: currentSessionId },
+          ...queryHistory.filter((h: HistoryItem) => h.query !== question),
+        ].slice(0, 10);
         setQueryHistory(updatedHistory);
         try {
           localStorage.setItem("queryHistory", JSON.stringify(updatedHistory));
         } catch {}
+
+        // Save full session messages
+        setMessages((prev) => {
+          saveSessionMessages(currentSessionId, prev);
+          return prev;
+        });
 
         setIsLoading(false);
         return;
@@ -1177,13 +1278,19 @@ Example format: ["Q1", "Q2", "Q3", "Q4"]`;
       );
 
       const updatedHistory = [
-        question,
-        ...queryHistory.filter((q: string) => q !== question),
-      ].slice(0, 6);
+        { query: question, timestamp: Date.now(), sessionId: currentSessionId },
+        ...queryHistory.filter((h: HistoryItem) => h.query !== question),
+      ].slice(0, 10);
       setQueryHistory(updatedHistory);
       try {
         localStorage.setItem("queryHistory", JSON.stringify(updatedHistory));
       } catch {}
+
+      // Save full session messages
+      setMessages((prev) => {
+        saveSessionMessages(currentSessionId, prev);
+        return prev;
+      });
 
       setLastChartData(finalResponse.data || []);
       setLastChartTitle(finalResponse.title || "");
@@ -1481,409 +1588,9 @@ Use ONLY real numbers from the data above. Be specific. Be concise. Sound execut
         className="h-[calc(100vh-112px)]"
         style={{
           display: "flex",
-          flexDirection: "row",
-          gap: "16px",
-          alignItems: "flex-start",
+          flexDirection: "column",
         }}
       >
-        <div
-          style={{
-            width: sidebarOpen ? "220px" : "48px",
-            flexShrink: 0,
-            background: "white",
-            borderRight: "1px solid #e2e8f0",
-            display: "flex",
-            flexDirection: "column",
-            transition: "width 0.25s ease",
-            overflow: "hidden",
-            height: "100vh",
-            position: "relative",
-            zIndex: 10,
-          }}
-        >
-          <div
-            style={{
-              padding: "14px 12px",
-              borderBottom: "1px solid #f1f5f9",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "8px",
-              flexShrink: 0,
-            }}
-          >
-            {sidebarOpen && (
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 800,
-                  background: "linear-gradient(135deg, #465FFF, #7B8AFF)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  letterSpacing: "-0.3px",
-                }}
-              >
-                Artha
-              </div>
-            )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              style={{
-                background: "transparent",
-                border: "1px solid #e2e8f0",
-                borderRadius: "6px",
-                width: "28px",
-                height: "28px",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "11px",
-                flexShrink: 0,
-                color: "#94a3b8",
-              }}
-            >
-              {sidebarOpen ? "‹‹" : "››"}
-            </button>
-          </div>
-
-          <div
-            style={{
-              padding: "8px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "2px",
-              flexShrink: 0,
-            }}
-          >
-            {sidebarOpen && (
-              <div
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "#cbd5e1",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  padding: "4px 8px 6px",
-                }}
-              >
-                Navigation
-              </div>
-            )}
-            {[
-              {
-                id: "chat",
-                icon: "▣",
-                label: "Chat",
-                action: () => setActiveSection("chat"),
-              },
-              {
-                id: "report",
-                icon: "▤",
-                label: "Generate Report",
-                action: () => generateExecutiveReport(),
-              },
-              {
-                id: "whatif",
-                icon: "◈",
-                label: "What-If Simulator",
-                action: () => {
-                  setActiveSection("chat");
-                  setInput("What if we double the top channel budget?");
-                },
-              },
-              {
-                id: "anomaly",
-                icon: "◎",
-                label: "Anomaly Scan",
-                action: () => {
-                  setActiveSection("chat");
-                  setMessages([]);
-                  setScanComplete(false);
-                  runAnomalyDetection(setScanning, setScanComplete, setAnomalies);
-                },
-              },
-              {
-                id: "fullanalysis",
-                icon: "▦",
-                label: "Full Analysis",
-                action: () => void handleSendMessage("give me full analysis"),
-              },
-              {
-                id: "dashboard",
-                icon: "▢",
-                label: "Full Dashboard",
-                action: () => window.open("http://localhost:5000", "_blank"),
-              },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveSection(item.id);
-                  item.action();
-                }}
-                title={!sidebarOpen ? item.label : ""}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "9px 10px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: activeSection === item.id ? "#465FFF" : "transparent",
-                  color: activeSection === item.id ? "white" : "#475569",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  fontWeight: activeSection === item.id ? 600 : 500,
-                  textAlign: "left",
-                  width: "100%",
-                  transition: "all 0.15s",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                }}
-                onMouseEnter={(e) => {
-                  if (activeSection !== item.id)
-                    (e.currentTarget as HTMLButtonElement).style.background = "#f8fafc";
-                }}
-                onMouseLeave={(e) => {
-                  if (activeSection !== item.id)
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "14px",
-                    flexShrink: 0,
-                    opacity: 0.7,
-                    fontFamily: "monospace",
-                  }}
-                >
-                  {item.icon}
-                </span>
-                {sidebarOpen && (
-                  <span
-                    style={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {item.label}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {sidebarOpen && (
-            <div
-              style={{
-                margin: "4px 8px 0",
-                padding: "10px 12px",
-                background: "#f8fafc",
-                borderRadius: "8px",
-                border: "1px solid #f1f5f9",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "#cbd5e1",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  marginBottom: "6px",
-                }}
-              >
-                Active Dataset
-              </div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  marginBottom: "2px",
-                }}
-              >
-                {(localStorage.getItem("uploadedFile") || "Nykaa Marketing").replace(
-                  ".csv",
-                  ""
-                )}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  color: "#465FFF",
-                  fontWeight: 500,
-                }}
-              >
-                {Number(localStorage.getItem("uploadedRows") || 55555).toLocaleString()} records
-              </div>
-            </div>
-          )}
-
-          {sidebarOpen && kpiData && (
-            <div
-              style={{
-                margin: "6px 8px 0",
-                padding: "10px 12px",
-                background: "#f8fafc",
-                borderRadius: "8px",
-                border: "1px solid #f1f5f9",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "#cbd5e1",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  marginBottom: "8px",
-                }}
-              >
-                Live KPIs
-              </div>
-              {[
-                {
-                  label: "Revenue",
-                  value: kpiData?.kpis?.total_revenue
-                    ? "₹" + (kpiData.kpis.total_revenue / 10000000).toFixed(1) + "Cr"
-                    : "—",
-                },
-                {
-                  label: "Avg ROI",
-                  value: kpiData?.kpis?.avg_roi ? kpiData.kpis.avg_roi + "x" : "—",
-                },
-                {
-                  label: "Top Channel",
-                  value: kpiData?.kpis?.top_channel || "—",
-                },
-                {
-                  label: "Conversions",
-                  value: kpiData?.kpis?.total_conversions
-                    ? Number(kpiData.kpis.total_conversions).toLocaleString()
-                    : "—",
-                },
-              ].map((kpi, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "5px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#94a3b8" }}>{kpi.label}</span>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#1e293b" }}>
-                    {kpi.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ flex: 1 }} />
-
-          {sidebarOpen && (
-            <div
-              style={{
-                padding: "8px",
-                borderTop: "1px solid #f1f5f9",
-                flexShrink: 0,
-                maxHeight: "200px",
-                overflowY: "auto",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "#cbd5e1",
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  padding: "2px 8px 8px",
-                }}
-              >
-                Recent Queries
-              </div>
-              {queryHistory.length === 0 && (
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#cbd5e1",
-                    textAlign: "center",
-                    padding: "8px 0",
-                  }}
-                >
-                  No history yet
-                </div>
-              )}
-              {queryHistory.map((q: string, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => void handleSendMessage(q)}
-                  title={q}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "6px 8px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "transparent",
-                    color: "#94a3b8",
-                    cursor: "pointer",
-                    fontSize: "11px",
-                    textAlign: "left",
-                    width: "100%",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "#f8fafc";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#475569";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8";
-                  }}
-                >
-                  <span style={{ fontSize: "9px", flexShrink: 0, opacity: 0.5 }}>↺</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{q}</span>
-                </button>
-              ))}
-              {queryHistory.length > 0 && (
-                <button
-                  onClick={() => {
-                    setQueryHistory([]);
-                    localStorage.removeItem("queryHistory");
-                  }}
-                  style={{
-                    fontSize: "9px",
-                    color: "#e2e8f0",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px 8px",
-                    width: "100%",
-                    textAlign: "left",
-                  }}
-                >
-                  Clear history
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
         <div className="flex-1 flex flex-col">
           {!hasMessages ? (
             <div className="flex-1 flex flex-col items-center justify-center px-4">
@@ -2263,7 +1970,18 @@ Use ONLY real numbers from the data above. Be specific. Be concise. Sound execut
               </motion.div>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+            <div
+              ref={messagesContainerRef}
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                padding: "20px 24px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                scrollBehavior: "smooth",
+              }}
+            >
               <AnimatePresence>
                 {messages.map((msg) => (
                   <motion.div
@@ -2687,7 +2405,7 @@ Use ONLY real numbers from the data above. Be specific. Be concise. Sound execut
 
                               {msg.role === "assistant" &&
                                 !msg.loading &&
-                                lastAssistantMessageId === msg.id && (
+                                msg.chartData && msg.chartData.length > 0 && (
                                   <div className="mt-4">
                                     <DashboardPreview
                                       chartType={msg.chartType || "bar"}
@@ -2702,7 +2420,6 @@ Use ONLY real numbers from the data above. Be specific. Be concise. Sound execut
 
                               {msg.role === "assistant" &&
                                 !msg.loading &&
-                                lastAssistantMessageId === msg.id &&
                                 msg.suggestions &&
                                 msg.suggestions.length > 0 && (
                                   <div className="mt-3 flex flex-wrap gap-2">
@@ -2886,31 +2603,7 @@ Use ONLY real numbers from the data above. Be specific. Be concise. Sound execut
           </div>
         </div>
 
-        <div className="hidden xl:block w-72 border-l border-[#E2E8F0] bg-white rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-[#E2E8F0]">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#1C2434]">
-                Recent Chats <span className="text-[#94A3B8]">({queryHistory.length})</span>
-              </h3>
-              <button className="p-1 rounded hover:bg-[#F1F5F9]" data-testid="button-projects-menu">
-                <MoreHorizontal className="w-4 h-4 text-[#94A3B8]" />
-              </button>
-            </div>
-          </div>
-          <div className="overflow-y-auto h-[calc(100%-56px)]">
-            {queryHistory.map((q, index) => (
-              <div
-                key={`${q}-${index}`}
-                className="px-4 py-3 border-b border-[#F1F5F9] hover:bg-[#F8FAFC] cursor-pointer transition-colors"
-                data-testid={`card-recent-${index}`}
-                onClick={() => handleSendMessage(q)}
-              >
-                <p className="text-sm font-medium text-[#1C2434] truncate">{q}</p>
-                <p className="text-xs text-[#94A3B8] mt-0.5 truncate">Saved query</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Right sidebar removed — Recent Chats moved to left sidebar */}
       </div>
       {showReport && (
         <div

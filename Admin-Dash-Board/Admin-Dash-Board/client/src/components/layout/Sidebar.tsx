@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,13 @@ import {
   Sun,
   Moon,
   Sparkles,
+  FileText,
+  Zap,
+  AlertCircle,
+  LineChart,
+  ExternalLink,
+  Database,
+  TrendingUp,
 } from "lucide-react";
 
 interface NavItem {
@@ -45,11 +52,47 @@ const pinnedDashboards = [
   { id: 2, title: "Sales Performance" },
 ];
 
+// Quick tool items for Artha Lens
+const quickTools = [
+  {
+    id: "report",
+    icon: FileText,
+    label: "Generate Report",
+    action: "report",
+  },
+  {
+    id: "whatif",
+    icon: Zap,
+    label: "What-If Simulator",
+    action: "whatif",
+  },
+  {
+    id: "anomaly",
+    icon: AlertCircle,
+    label: "Anomaly Scan",
+    action: "anomaly",
+  },
+  {
+    id: "fullanalysis",
+    icon: LineChart,
+    label: "Full Analysis",
+    action: "fullanalysis",
+  },
+  {
+    id: "dashboard",
+    icon: ExternalLink,
+    label: "Full Dashboard",
+    action: "dashboard",
+  },
+];
+
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>(["Dashboard"]);
   const [darkMode, setDarkMode] = useState(false);
-  const [recentChats, setRecentChats] = useState<string[]>([]);
+  const [recentChats, setRecentChats] = useState<{ query: string; timestamp: number; sessionId: string }[]>([]);
+  const [kpiData, setKpiData] = useState<any>(null);
+  const [showQuickTools, setShowQuickTools] = useState(true);
 
   const toggleExpand = (label: string) => {
     setExpandedItems((prev) =>
@@ -63,23 +106,71 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     localStorage.setItem("theme", darkMode ? "light" : "dark");
   };
 
+  // Load recent chats from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("queryHistory");
-    if (stored) {
-      try {
-        const queries = JSON.parse(stored);
-        if (Array.isArray(queries)) {
-          setRecentChats(queries);
+    const loadChats = () => {
+      const stored = localStorage.getItem("queryHistory");
+      if (stored) {
+        try {
+          const queries = JSON.parse(stored);
+          if (Array.isArray(queries)) {
+            const normalized = queries.map((item: any) =>
+              typeof item === "string"
+                ? { query: item, timestamp: Date.now(), sessionId: "" }
+                : { query: item.query || "", timestamp: item.timestamp || Date.now(), sessionId: item.sessionId || "" }
+            ).filter((h: any) => h.query);
+            setRecentChats(normalized);
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
       }
-    }
+    };
+
+    loadChats();
+    // Re-check every 2 seconds to stay in sync with chat.tsx
+    const interval = setInterval(loadChats, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch KPI data (same endpoint as chat.tsx)
+  useEffect(() => {
+    fetch("http://localhost:8000/analysis")
+      .then((r) => r.json())
+      .then((data) => setKpiData(data))
+      .catch(() => {});
   }, []);
 
   const isActive = (path?: string) => path === location;
   const isChildActive = (children?: { path: string }[]) =>
     children?.some((c) => c.path === location);
+
+  const handleQuickToolClick = (action: string) => {
+    if (action === "dashboard") {
+      window.open("http://localhost:5000/dashboard/analytics", "_blank");
+      return;
+    }
+    // Navigate to chat and dispatch a custom event so chat.tsx can handle the action
+    if (location !== "/chat") {
+      setLocation("/chat");
+    }
+    // Dispatch custom event for chat.tsx to pick up
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("artha-quick-action", { detail: { action } }));
+    }, 100);
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm("Clear all chat history?")) {
+      setRecentChats([]);
+      localStorage.removeItem("queryHistory");
+      localStorage.removeItem("chatSessions");
+      window.dispatchEvent(new CustomEvent("artha-quick-action", { detail: { action: "clearHistory" } }));
+    }
+  };
+
+  const datasetName = (localStorage.getItem("uploadedFile") || "Nykaa Marketing").replace(".csv", "");
+  const datasetRows = Number(localStorage.getItem("uploadedRows") || 55555).toLocaleString();
 
   const renderNavItem = (item: NavItem) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -194,10 +285,118 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         <div className="flex-1 overflow-y-auto px-4 py-3">
           <ul className="space-y-1">{menuItems.map(renderNavItem)}</ul>
 
-          <div className="mt-6">
+          {/* ─── Quick Tools (from inner sidebar) ─── */}
+          <div className="mt-5">
+            <button
+              onClick={() => setShowQuickTools(!showQuickTools)}
+              className="flex items-center justify-between w-full px-4 mb-1"
+            >
+              <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
+                Quick Tools
+              </p>
+              {showQuickTools ? (
+                <ChevronUp className="w-3.5 h-3.5 text-[#94A3B8]" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8]" />
+              )}
+            </button>
+            <AnimatePresence>
+              {showQuickTools && (
+                <motion.ul
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-0.5 overflow-hidden"
+                >
+                  {quickTools.map((tool) => (
+                    <li key={tool.id}>
+                      <button
+                        onClick={() => handleQuickToolClick(tool.action)}
+                        data-testid={`quick-tool-${tool.id}`}
+                        className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1C2434] transition-colors w-full text-left"
+                      >
+                        <tool.icon className="w-4 h-4" />
+                        <span>{tool.label}</span>
+                        {tool.action === "dashboard" && (
+                          <ExternalLink className="w-3 h-3 ml-auto text-[#CBD5E1]" />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ─── Active Dataset ─── */}
+          <div className="mt-5 mx-1">
+            <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#F1F5F9]">
+              <div className="flex items-center gap-2 mb-2">
+                <Database className="w-3.5 h-3.5 text-[#94A3B8]" />
+                <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                  Active Dataset
+                </p>
+              </div>
+              <p className="text-sm font-semibold text-[#1C2434] truncate">{datasetName}</p>
+              <p className="text-xs text-[#465FFF] font-medium mt-0.5">{datasetRows} records</p>
+            </div>
+          </div>
+
+          {/* ─── Live KPIs ─── */}
+          {kpiData && (
+            <div className="mt-3 mx-1">
+              <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#F1F5F9]">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-[#94A3B8]" />
+                  <p className="text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                    Live KPIs
+                  </p>
+                </div>
+                {[
+                  {
+                    label: "Revenue",
+                    value: kpiData?.kpis?.total_revenue
+                      ? "₹" + (kpiData.kpis.total_revenue / 10000000).toFixed(1) + "Cr"
+                      : "—",
+                  },
+                  {
+                    label: "Avg ROI",
+                    value: kpiData?.kpis?.avg_roi ? kpiData.kpis.avg_roi + "x" : "—",
+                  },
+                  {
+                    label: "Top Channel",
+                    value: kpiData?.kpis?.top_channel || "—",
+                  },
+                  {
+                    label: "Conversions",
+                    value: kpiData?.kpis?.total_conversions
+                      ? Number(kpiData.kpis.total_conversions).toLocaleString()
+                      : "—",
+                  },
+                ].map((kpi, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center py-1"
+                  >
+                    <span className="text-xs text-[#94A3B8]">{kpi.label}</span>
+                    <span className="text-xs font-bold text-[#1C2434]">{kpi.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Recent Chats ─── */}
+          <div className="mt-5">
             <div className="flex items-center justify-between px-4 mb-2">
               <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
                 Recent Chats
+                {recentChats.length > 0 && (
+                  <span className="ml-2 bg-[#465FFF] text-white text-[9px] px-1.5 py-0.5 rounded-full">
+                    {recentChats.length}
+                  </span>
+                )}
               </p>
               <button className="p-1 rounded hover:bg-[#F1F5F9]" data-testid="button-new-chat">
                 <Plus className="w-3.5 h-3.5 text-[#94A3B8]" />
@@ -213,20 +412,46 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
               ) : (
                 recentChats.map((chat, i) => (
                   <li key={i}>
-                    <Link
-                      href="/chat"
+                    <button
+                      onClick={() => {
+                        if (location !== "/chat") {
+                          setLocation("/chat");
+                        }
+                        if (chat.sessionId) {
+                          setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent("artha-quick-action", {
+                              detail: { action: "restoreSession", sessionId: chat.sessionId }
+                            }));
+                          }, 150);
+                        }
+                      }}
                       data-testid={`link-chat-${i}`}
-                      className="flex items-center justify-between px-4 py-2 rounded-lg text-sm text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1C2434] transition-colors"
+                      className="flex flex-col gap-0.5 w-full text-left px-4 py-2 rounded-lg text-sm text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#1C2434] transition-colors"
                     >
-                      <span className="truncate">{chat}</span>
-                    </Link>
+                      <span className="truncate text-sm">{chat.query}</span>
+                      <span className="text-[10px] text-[#CBD5E1]">
+                        {new Date(chat.timestamp).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </button>
                   </li>
                 ))
               )}
             </ul>
+            {recentChats.length > 0 && (
+              <button
+                onClick={handleClearHistory}
+                className="text-[10px] text-[#CBD5E1] hover:text-[#EF4444] px-4 py-1 transition-colors"
+              >
+                Clear history
+              </button>
+            )}
           </div>
 
-          <div className="mt-6">
+          {/* ─── Pinned ─── */}
+          <div className="mt-5">
             <div className="flex items-center justify-between px-4 mb-2">
               <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
                 Pinned

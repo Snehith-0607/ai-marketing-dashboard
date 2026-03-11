@@ -180,17 +180,13 @@ function HeroSection() {
 
         {/* ─── Marquee Ticker ─── */}
         <div style={{
-          width: "100vw",
-          position: "relative",
-          left: "50%",
-          right: "50%",
-          marginLeft: "-50vw",
-          marginRight: "-50vw",
+          width: "100%",
           overflow: "hidden",
-          background: "#465FFF",
-          padding: "10px 0",
+          padding: "16px 0",
           marginBottom: "32px",
-          marginTop: "24px"
+          marginTop: "24px",
+          borderTop: "1px solid #f1f5f9",
+          borderBottom: "1px solid #f1f5f9"
         }}>
           <div style={{
             display: "inline-flex",
@@ -205,9 +201,7 @@ function HeroSection() {
               "Executive Reports",
               "Revenue by Campaign", "ROI Analysis", "Conversion Trends",
               "Channel Performance", "Engagement Score", "Customer Segments",
-              "Acquisition Cost", "Monthly Trends", "Top Performers",
-              "Language Analysis", "What-If Simulator", "Anomaly Detection",
-              "Executive Reports",
+              "Acquisition Cost",
             ].map((item, i) => (
               <span key={i} style={{
                 display: "inline-flex",
@@ -216,10 +210,9 @@ function HeroSection() {
                 padding: "0 20px",
                 fontSize: "11px",
                 fontWeight: "600",
-                color: "white",
-                letterSpacing: "1px",
-                textTransform: "uppercase" as const,
-                opacity: 0.9
+                color: "#94a3b8",
+                letterSpacing: "1.5px",
+                textTransform: "uppercase" as const
               }}>
                 {item}
                 <span style={{
@@ -227,7 +220,7 @@ function HeroSection() {
                   width: "3px",
                   height: "3px",
                   borderRadius: "50%",
-                  background: "rgba(255,255,255,0.4)"
+                  background: "#cbd5e1"
                 }}/>
               </span>
             ))}
@@ -270,12 +263,50 @@ function HeroSection() {
           className="relative mt-16 max-w-5xl mx-auto"
         >
           <div className="absolute -inset-4 bg-gradient-to-r from-[#465FFF]/10 via-[#7B8AFF]/5 to-[#465FFF]/10 rounded-3xl blur-2xl" />
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-blue-900/10 border border-gray-200/60">
+          <div style={{
+            width: "100%",
+            maxWidth: "860px",
+            margin: "0 auto",
+            borderRadius: "16px",
+            overflow: "hidden",
+            boxShadow: "0 25px 80px rgba(0,0,0,0.15)",
+            border: "1px solid #e2e8f0"
+          }}>
+            {/* Browser chrome bar */}
+            <div style={{
+              background: "#f1f5f9",
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              borderBottom: "1px solid #e2e8f0"
+            }}>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{width:"10px",height:"10px",borderRadius:"50%",background:"#ef4444"}}/>
+                <div style={{width:"10px",height:"10px",borderRadius:"50%",background:"#f59e0b"}}/>
+                <div style={{width:"10px",height:"10px",borderRadius:"50%",background:"#10b981"}}/>
+              </div>
+              <div style={{
+                flex: 1,
+                background: "white",
+                borderRadius: "6px",
+                padding: "4px 12px",
+                fontSize: "11px",
+                color: "#94a3b8",
+                textAlign: "center" as const
+              }}>
+                localhost:3000 — Artha Lens
+              </div>
+            </div>
             <img
-              src={dashboardPreviewPath}
-              alt="Dashboard Preview"
-              className="w-full h-auto"
+              src="/artha-dashboard-preview.png"
+              alt="Artha Dashboard"
+              style={{ width: "100%", display: "block" }}
               data-testid="img-hero-preview"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.height = "400px";
+                (e.currentTarget as HTMLImageElement).style.background = "linear-gradient(135deg, #465FFF11, #7B8AFF22)";
+              }}
             />
           </div>
         </motion.div>
